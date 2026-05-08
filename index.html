@@ -1920,7 +1920,36 @@ body.desktop-text-invert .widget-disc .app-label {
 
 <script>
 
+// ==========================================
+// 核心补丁：基础文本转义与加载更多函数
+// ==========================================
+window.escapeEchoText = function(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
 
+window.loadMoreCybChats = function(accountId, npcId) {
+    window.cybChatDisplayLimit = (window.cybChatDisplayLimit || 50) + 50;
+    const msgArea = document.getElementById('cybChatMsgsArea');
+    if (msgArea) {
+        window.isLoadingMoreCybChats = true;
+        const oldHeight = msgArea.scrollHeight;
+        openCybChatWindow(accountId, npcId);
+        setTimeout(() => {
+            const newArea = document.getElementById('cybChatMsgsArea');
+            if (newArea) {
+                newArea.scrollTop = newArea.scrollHeight - oldHeight;
+                window.isLoadingMoreCybChats = false;
+            }
+        }, 50);
+    }
+};
+// ==========================================
 
     // ---------------------------------------------------
     // 精简且强大的 IndexedDB 封装
