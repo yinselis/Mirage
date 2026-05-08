@@ -11039,7 +11039,7 @@ let allSettings = await getDB('cyb_chat_settings', {});
     
     let userProfiles = await getDB('user_profiles',[]);
     let specificUser = userProfiles.find(p => String(p.id) === String(settings.selectedUserProfile));
-
+let realName = specificUser && specificUser.name ? specificUser.name : me.name;
     // 计算认识天数
     let daysKnownStr = "";
     if (chatList.length > 0) {
@@ -15749,6 +15749,7 @@ window.receiveCybGroupChatMsg = async function(accountId, groupId, groupInfo, my
     let settings = allSettings[chatKey] || {};
     let userProfiles = await getDB('user_profiles', []);
     let specificUser = userProfiles.find(p => String(p.id) === String(settings.selectedUserProfile));
+    let realName = specificUser && specificUser.name ? specificUser.name : me.name;
     let limit = parseInt(settings.contextCount) || 15;
     let enableTrans = settings.enableTrans !== false;
     let replyCountSetting = settings.replyCount || '0';
