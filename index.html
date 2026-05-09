@@ -1631,6 +1631,13 @@ body.desktop-text-invert .widget-disc .app-label {
 .jiazi-avatar { width: 48px; height: 48px; border-radius: 12px; border: 2.5px solid var(--line-color); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #fff; }
 .jiazi-word-item { background: var(--bg-color); border: 2px dashed rgba(0,0,0,0.15); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; line-height: 1.5; word-break: break-all; }
 
+/* 像素工坊专属工具按钮样式 */
+.pixel-tool-btn {
+    padding: 8px 14px; border: 2.5px solid var(--line-color); border-radius: 12px; font-size: 13px; font-weight: 900; background: var(--bg-color); cursor: pointer; box-shadow: 2px 2px 0 var(--line-color); transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.pixel-tool-btn.active { background: var(--color-yellow); transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--line-color); }
+.pixel-tool-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--line-color); }
+
     </style>
     <!-- 动态插入用户字体库与CSS -->
     <style id="custom-font-style"></style>
@@ -1737,17 +1744,16 @@ body.desktop-text-invert .widget-disc .app-label {
                 <span class="app-label">玄学</span>
             </div>
 
-           <div class="app-wrapper p2-movie" onclick="openApp('文游', '文字冒险引擎')">
+           <div class="app-wrapper p2-movie" onclick="openApp('像素画', '像素工坊')">
     <div class="neo-box app-icon" style="background: var(--color-green);">
-        <!-- 换成了简洁清爽的游戏手柄图标 -->
-        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-            <path d="M6 12h4"></path><path d="M8 10v4"></path>
-            <circle cx="15.5" cy="11.5" r="1" fill="currentColor"></circle>
-            <circle cx="18.5" cy="14.5" r="1" fill="currentColor"></circle>
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- 一个极简风格的像素网格/调色板图标 -->
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <path d="M3 9h18M9 21V9"></path>
+            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"></circle>
         </svg>
     </div>
-    <span class="app-label">文游</span>
+    <span class="app-label">像素画</span>
 </div>
 
             <div class="app-wrapper p2-period" onclick="openApp('月经', '身体周期')">
@@ -2662,9 +2668,10 @@ async function getDiaryAiResponse(diaryId, extraMsg = null, isRegenerate = false
     const targetIndex = diaries.findIndex(d => d.id === parseInt(diaryId));
     if(targetIndex === -1) return;
     
-    const apiUrl = await getDB('apiUrl');
-    const apiKey = await getDB('apiKey');
-    const model = await getDB('aiModel');
+    let useSubApi = await getDB('diary_use_subapi', true);
+let apiUrl = useSubApi ? (await getDB('subApiUrl') || await getDB('apiUrl')) : await getDB('apiUrl');
+let apiKey = useSubApi ? (await getDB('subApiKey') || await getDB('apiKey')) : await getDB('apiKey');
+let model = useSubApi ? (await getDB('subAiModel') || await getDB('aiModel')) : await getDB('aiModel');
     if(!apiUrl || !apiKey) { alert("请先去设置中配置 API。"); return; }
 
     let d = diaries[targetIndex];
@@ -3043,9 +3050,10 @@ async function saveExchangeDiary() {
 }
 
 async function aiWriteExchangeDiary(entryId) {
-    const apiUrl = await getDB('apiUrl');
-    const apiKey = await getDB('apiKey');
-    const model = await getDB('aiModel');
+    let useSubApi = await getDB('diary_use_subapi', true);
+let apiUrl = useSubApi ? (await getDB('subApiUrl') || await getDB('apiUrl')) : await getDB('apiUrl');
+let apiKey = useSubApi ? (await getDB('subApiKey') || await getDB('apiKey')) : await getDB('apiKey');
+let model = useSubApi ? (await getDB('subAiModel') || await getDB('aiModel')) : await getDB('aiModel');
     if(!apiUrl || !apiKey) return;
 
     // --- 获取当前设为活动的 AI 角色卡 ---
@@ -4221,10 +4229,15 @@ const bgImgUrlVal = await getDB('bgImageUrl', '');
     } else if (appId === '日记') {
     if (actionArea) {
     actionArea.innerHTML = `
-        <div onclick="openDiaryDatePicker()" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end;">
-            <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: var(--text-main); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div onclick="openDiarySettingsModal()" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: var(--text-main); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </div>
+            <div onclick="openDiaryDatePicker()" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: var(--text-main); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
         </div>
     `;
 }
@@ -4251,13 +4264,18 @@ const bgImgUrlVal = await getDB('bgImageUrl', '');
     } else if (appId === '记账') {
     if (actionArea) {
         actionArea.innerHTML = `
-            <div class="memo-nav-btn" onclick="openLedgerStats()" style="background:var(--color-blue); width:40px; height:40px; border-radius:12px;">
-                <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--text-main);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
-                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div class="memo-nav-btn" onclick="openLedgerSettingsModal()" style="background:var(--neo-bg); width:40px; height:40px; border-radius:12px;">
+                    <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--text-main); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+                <div class="memo-nav-btn" onclick="openLedgerStats()" style="background:var(--color-blue); width:40px; height:40px; border-radius:12px;">
+                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--text-main);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
             </div>
         `;
     }
@@ -4302,6 +4320,25 @@ const bgImgUrlVal = await getDB('bgImageUrl', '');
     // 触发多账号系统的初始化引擎
     window.cybCurrentTab = 'chat'; // 'chat' 会话 | 'contact' 联系人
     await initCybTerminal();
+} else if (appId === '像素画') {
+    document.querySelector('.app-header').style.display = 'none';
+    appContent.style.padding = '0';
+    appContent.innerHTML = `
+        <div style="display:flex; flex-direction:column; height:100%; background:var(--bg-color);">
+            <!-- 返回按钮与 Tab 融合，节省空间 -->
+            <div style="display:flex; align-items:center; padding:calc(12px + env(safe-area-inset-top)) 16px 8px; border-bottom: 2.5px solid var(--line-color); background:var(--neo-bg); gap: 12px;">
+                <div class="x-chat-back-only" onclick="closeApp()" style="width: 36px; height: 36px; background: var(--color-yellow); border: 2.5px solid var(--line-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 0 var(--line-color); flex-shrink: 0;">
+                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--text-main);fill:none;stroke-width:3;stroke-linecap:round;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </div>
+                <div class="diary-tabs" style="margin-bottom:0; border-bottom:none; flex:1;">
+                    <div class="diary-tab active" id="tabPixelDraw" onclick="switchPixelTab('draw')" style="padding:8px 0;">像素画板</div>
+                    <div class="diary-tab" id="tabPixelShop" onclick="switchPixelTab('shop')" style="padding:8px 0;">颜料商店</div>
+                </div>
+            </div>
+            <div id="pixelAppContainer" style="flex:1; display:flex; flex-direction:column; padding-bottom: 20px; overflow-y:auto; overflow-x:hidden;"></div>
+        </div>
+    `;
+    await initPixelApp();
     } else if (appId === '玄学') {
         appContent.innerHTML = `
             <div class="diary-tabs">
@@ -7586,9 +7623,10 @@ async function checkAiIndependentDiary() {
     
     // 设定 30% 概率它会突然想写日记，防止每次打开必写显得太死板
     if (!aiWroteToday && Math.random() < 0.30) {
-        const apiUrl = await getDB('apiUrl');
-        const apiKey = await getDB('apiKey');
-        const model = await getDB('aiModel');
+        let useSubApi = await getDB('diary_use_subapi', true);
+let apiUrl = useSubApi ? (await getDB('subApiUrl') || await getDB('apiUrl')) : await getDB('apiUrl');
+let apiKey = useSubApi ? (await getDB('subApiKey') || await getDB('apiKey')) : await getDB('apiKey');
+let model = useSubApi ? (await getDB('subAiModel') || await getDB('aiModel')) : await getDB('aiModel');
         const activeAiId = await getDB('active_ai_profile_id');
         const allAiProfiles = await getDB('ai_profiles',[]);
         const activeAI = allAiProfiles.find(p => p.id === activeAiId);
@@ -7654,9 +7692,10 @@ async function checkAiIndependentLedger() {
 
     // 每天有 35% 的概率偷偷记一笔账
     if (!aiLedgerToday && Math.random() < 0.35) { 
-        const apiUrl = await getDB('apiUrl');
-        const apiKey = await getDB('apiKey');
-        const model = await getDB('aiModel');
+        let useSubApi = await getDB('ledger_use_subapi', true);
+let apiUrl = useSubApi ? (await getDB('subApiUrl') || await getDB('apiUrl')) : await getDB('apiUrl');
+let apiKey = useSubApi ? (await getDB('subApiKey') || await getDB('apiKey')) : await getDB('apiKey');
+let model = useSubApi ? (await getDB('subAiModel') || await getDB('aiModel')) : await getDB('aiModel');
         const allAiProfiles = await getDB('ai_profiles',[]);
         const activeAI = allAiProfiles.find(p => p.id === activeAiId);
         
@@ -10685,8 +10724,8 @@ window.parseCybSpecialMsg = function(content, isUser, bubbleClass, msgObj = null
         `);
     }
 
-    // 8. 真实图片
-    if (content === '[真实图片]' && msgObj && msgObj.imageBase64) {
+    // 8. 真实图片与像素画分享
+if ((content === '[真实图片]' || content === '[分享了像素画]') && msgObj && msgObj.imageBase64) {
         return wrap(`
             <div class="cyb-sp-box cyb-sp-media-box cyb-sp-realimg-box" onclick="openCybChatImagePreview(this.querySelector('img').src)">
                 <img src="${msgObj.imageBase64}" class="cyb-sp-media-img" style="max-height:250px;">
@@ -20342,6 +20381,1055 @@ window.deleteJiazi = async function(id) {
     document.getElementById('jiaziChatModal').remove();
     renderJiaziList();
 };
+
+// ===================================================
+// 像素工坊核心引擎 (Canvas 高性能版 + AI 专属色板)
+// ===================================================
+window.pixelCurrentColor = '#111111';
+window.pixelCurrentTool = 'pen'; // 'pen', 'eraser', 'fill', 'dropper'
+window.pixelHistory = []; // 撤销历史栈
+window.pixelHistoryStep = -1; // 当前所在历史步数
+window.pixelSelection = null; // 框选状态对象
+
+// 【新增】画布视图设置变量
+window.pixelShowGrid = true;
+window.pixelCanvasBg = '#ffffff';
+
+// 内置颜料套装库 (P币购买)
+window.PIXEL_PALETTES = [
+    { id: 'p_default', name: '基础水彩', price: 0, colors: ['#111111', '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#ffffff'] },
+    { id: 'p_pastel', name: '马卡龙甜品', price: 50, desc: '软乎乎的粉彩系', colors: ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e8baff', '#f4baff', '#111111'] },
+    { id: 'p_gb', name: '复古掌机', price: 100, desc: '致敬 GameBoy 经典四色', colors: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f', '#111111', '#ffffff'] },
+    { id: 'p_cyber', name: '赛博霓虹', price: 200, desc: '高饱和度电子风', colors: ['#000000', '#ff003c', '#00e5ff', '#00ff00', '#f1c40f', '#ff00ff', '#bd00ff', '#ffffff'] }
+];
+
+window.switchPixelTab = async function(tab) {
+    document.getElementById('tabPixelDraw').classList.toggle('active', tab === 'draw');
+    document.getElementById('tabPixelShop').classList.toggle('active', tab === 'shop');
+    if (tab === 'draw') await renderPixelDraw();
+    else await renderPixelShop();
+};
+
+// 保存当前画板状态到历史栈中
+window.savePixelHistory = function() {
+    if (window.pixelHistoryStep < window.pixelHistory.length - 1) {
+        window.pixelHistory = window.pixelHistory.slice(0, window.pixelHistoryStep + 1);
+    }
+    window.pixelHistory.push([...window.pixelGridData]);
+    
+    if (window.pixelHistory.length > 30) window.pixelHistory.shift(); 
+    else window.pixelHistoryStep++;
+
+    // 【新增】保存笔画数和最后编辑时间
+    if (window.pixelStats) {
+        window.pixelStats.strokeCount++;
+        window.pixelStats.updateTime = Date.now();
+        setDB('pixel_canvas_stats', window.pixelStats); 
+    }
+};
+
+window.initPixelApp = async function() {
+    window.pixelGridSize = await getDB('pixel_grid_size', 16);
+    // 【新增】读取画布统计数据
+    window.pixelStats = await getDB('pixel_canvas_stats', {
+        createTime: Date.now(),
+        updateTime: Date.now(),
+        strokeCount: 0
+    });
+
+    const savedData = await getDB('pixel_canvas_data');
+    if (savedData && savedData.length === window.pixelGridSize * window.pixelGridSize) {
+        window.pixelGridData = savedData;
+    } else {
+        window.pixelGridData = new Array(window.pixelGridSize * window.pixelGridSize).fill('transparent');
+    }
+    window.pixelHistory = [];
+    window.pixelHistoryStep = -1;
+    savePixelHistory(); // 初始化第一步
+    await switchPixelTab('draw');
+};
+
+// ==== 修复：缺失的像素画工具函数 ====
+window.setPixelColor = function(color) {
+    window.pixelCurrentColor = color;
+    // 如果当前是橡皮擦，选了颜色自动切回画笔
+    if (window.pixelCurrentTool === 'eraser') window.pixelCurrentTool = 'pen';
+    renderPixelDraw();
+};
+
+window.setPixelTool = function(tool) {
+    if (window.pixelSelection && typeof window.mergePixelSelection === 'function') {
+        window.mergePixelSelection();
+    }
+    window.pixelCurrentTool = tool;
+    renderPixelDraw();
+};
+
+// ==== 真正的颜料商店系统 ====
+window.renderPixelShop = async function() {
+    const container = document.getElementById('pixelAppContainer');
+    
+    let customPalettes = await getDB('pixel_custom_palettes', []);
+    let allPalettes = [...PIXEL_PALETTES, ...customPalettes];
+    let unlocked = await getDB('pixel_unlocked_palettes', ['p_default']);
+    let pCoin = await getDB('walk_x_p_coin', 0);
+    let activePaletteId = await getDB('pixel_active_palette', 'p_default');
+
+    let html = `
+        <!-- AI 调色高级面板 -->
+        <div style="background:var(--color-blue); padding:16px; border-radius:16px; border:2.5px solid var(--line-color); box-shadow: 4px 4px 0 var(--line-color); margin: 16px;">
+            <div style="font-size:14px; font-weight:900; margin-bottom:8px;">AI 专属色彩推荐</div>
+            <div style="font-size:11px; font-weight:bold; opacity:0.8; margin-bottom:8px;">让TA为你配一套专属的调色板。</div>
+            
+            <input type="text" id="aiPaletteTheme" class="form-input" placeholder="指定要求 (选填，如：赛博朋克、复古、蓝色系)" style="font-size:12px; padding:10px; margin-bottom:10px; background:var(--neo-bg);">
+            
+            <label style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:bold; cursor:pointer; margin-bottom:12px;">
+                <input type="checkbox" id="aiPaletteUseSubApi" checked style="accent-color:var(--color-pink); transform:scale(1.1);"> 使用便宜的副 API (省钱防扣费)
+            </label>
+            
+            <button class="form-btn" id="btnAiPalette" style="width:100%; background:var(--neo-bg); font-size:13px; padding:10px;" onclick="askAiForPalette()">生成专属颜料 (免费)</button>
+        </div>
+
+        <div style="padding: 0 16px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; background:var(--neo-bg); border: 2.5px solid var(--line-color); padding: 12px; border-radius: 12px; box-shadow: 3px 3px 0 var(--line-color);">
+                <div style="font-weight: 900; font-size: 15px;">我的 P币 余额</div>
+                <div style="font-weight: 900; font-size: 18px; color: var(--color-pink);">${pCoin}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+    `;
+
+    allPalettes.forEach(p => {
+        let isUnlocked = p.price === 0 || unlocked.includes(p.id) || p.id.startsWith('p_ai_');
+        let isUsing = activePaletteId === p.id;
+        
+        let colorsPreview = p.colors.filter(c => c !== 'transparent' && c !== '#transparent').slice(0, 7).map(c => `<div style="width:16px; height:16px; border-radius:50%; background:${c}; border:1.5px solid rgba(0,0,0,0.2);"></div>`).join('');
+
+        let btnHtml = '';
+        if (isUsing) {
+            btnHtml = `<button class="diary-mini-btn" style="background:var(--color-yellow); color:#111; pointer-events:none;">使用中</button>`;
+        } else if (isUnlocked) {
+            btnHtml = `<button class="diary-mini-btn" style="background:var(--color-green); color:#111; box-shadow:2px 2px 0 var(--line-color);" onclick="usePixelPalette('${p.id}')">换上</button>`;
+        } else {
+            btnHtml = `<button class="diary-mini-btn" style="background:var(--color-pink); color:#111; box-shadow:2px 2px 0 var(--line-color);" onclick="buyPixelPalette('${p.id}', ${p.price})">¥ ${p.price} 购买</button>`;
+        }
+
+        html += `
+            <div style="background:var(--bg-color); border:2.5px solid var(--line-color); border-radius:14px; padding:16px; box-shadow: 4px 4px 0 var(--line-color); display:flex; justify-content:space-between; align-items:center;">
+                <div style="flex:1; min-width:0; margin-right:10px;">
+                    <div style="font-weight:900; font-size:15px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+                    <div style="font-size:11px; font-weight:bold; opacity:0.6; margin-bottom:8px;">${p.desc || '专属画材'}</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">${colorsPreview}</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    ${btnHtml}
+                    ${p.id.startsWith('p_ai_') && !isUsing ? `<div style="font-size:10px; text-align:center; color:#e74c3c; font-weight:bold; cursor:pointer; text-decoration:underline;" onclick="deleteAiPalette('${p.id}')">删除</div>` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+};
+
+// --- 购买与扣钱逻辑 ---
+window.buyPixelPalette = async function(id, price) {
+    if (!confirm(`确定要花费 ${price} P币 购买这套颜料吗？`)) return;
+
+    let pCoin = await getDB('walk_x_p_coin', 0);
+    if (pCoin < price) {
+        uiAlert("P币余额不足哦！\n(你可以去终端群聊里抢红包攒钱)");
+        return;
+    }
+
+    // 扣除 P币
+    await setDB('walk_x_p_coin', pCoin - price);
+
+    // 添加到已解锁列表
+    let unlocked = await getDB('pixel_unlocked_palettes', ['p_default']);
+    unlocked.push(id);
+    await setDB('pixel_unlocked_palettes', unlocked);
+    
+    uiAlert(`购买成功！已自动为你装备。`);
+    await usePixelPalette(id, false); 
+};
+
+// --- 装备色板逻辑 ---
+window.usePixelPalette = async function(id, shouldAlert = true) {
+    await setDB('pixel_active_palette', id);
+    
+    // 强制把当前画笔颜色切到新色板的第一个颜色，防止画笔颜色残留
+    let customPalettes = await getDB('pixel_custom_palettes', []);
+    let allPalettes = [...PIXEL_PALETTES, ...customPalettes];
+    let targetPalette = allPalettes.find(p => p.id === id);
+    
+    if (targetPalette && targetPalette.colors.length > 0) {
+        let validColors = targetPalette.colors.filter(c => c !== 'transparent' && c !== '#transparent');
+        if(validColors.length > 0) window.pixelCurrentColor = validColors[0];
+    }
+    
+    if(shouldAlert) uiAlert("装备成功！去画板试试新颜色吧。");
+    renderPixelShop(); 
+};
+
+// --- 带有自定义输入和副API切换功能的生成算法 ---
+window.askAiForPalette = async function() {
+    const useSubApi = document.getElementById('aiPaletteUseSubApi').checked;
+    const themeInput = document.getElementById('aiPaletteTheme').value.trim();
+    
+    let apiUrl = useSubApi ? (await getDB('subApiUrl') || await getDB('apiUrl')) : await getDB('apiUrl');
+    let apiKey = useSubApi ? (await getDB('subApiKey') || await getDB('apiKey')) : await getDB('apiKey');
+    let model = useSubApi ? (await getDB('subAiModel') || await getDB('aiModel')) : await getDB('aiModel');
+
+    const activeAiId = await getDB('active_ai_profile_id');
+    const aiProfiles = await getDB('ai_profiles',[]);
+    const activeAI = aiProfiles.find(p => p.id === activeAiId);
+
+    if(!apiUrl || !apiKey || !activeAI) return uiAlert("请确保 API 已配置，并去指令集选定了一个陪伴角色！");
+
+    const btn = document.getElementById('btnAiPalette');
+    btn.innerText = "TA 正在调色...";
+    btn.disabled = true;
+
+    let themeReq = themeInput ? `用户特别指定的色彩风格是：“${themeInput}”。请务必按这个要求来！` : `请你结合你的性格或者你对用户的感觉自由发挥。`;
+
+    const prompt = `你是${activeAI.name}。你的性格设定是：${activeAI.bio}。
+用户现在正在玩像素画游戏，为你配一套【调色板】。
+${themeReq}
+
+要求：
+1. 调色板必须包含 8 个颜色的十六进制 Hex 代码。
+2. 名字要符合你的人设风格（如：冰冷深海、带血的玫瑰...）。
+3. 必须严格返回合法的 JSON 格式：{"name": "你想的名字", "colors": ["#111111", "#ff0000", ...等共8个]}。
+4. 绝对不要输出任何其他文字、解释或 markdown 标记，只能输出纯 JSON 代码！`;
+
+    try {
+        const endpoint = apiUrl.replace(/\/+$/, '') + (apiUrl.includes('/v1') ? '/chat/completions' : '/v1/chat/completions');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: model, messages: [{ role: 'system', content: prompt }], temperature: 0.9 })
+        });
+        const data = await res.json();
+        let raw = data.choices[0].message.content.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let result = JSON.parse(raw);
+        
+        let newPalette = {
+            id: 'p_ai_' + Date.now(),
+            name: result.name,
+            desc: `来自 ${activeAI.name} 的配色`,
+            colors: ['transparent', ...result.colors.slice(0,8)],
+            price: 0
+        };
+
+        let customP = await getDB('pixel_custom_palettes', []);
+        customP.unshift(newPalette);
+        await setDB('pixel_custom_palettes', customP);
+
+        let unlocked = await getDB('pixel_unlocked_palettes', ['p_default']);
+        unlocked.push(newPalette.id);
+        await setDB('pixel_unlocked_palettes', unlocked);
+        await setDB('pixel_active_palette', newPalette.id); 
+        
+        uiAlert(`✨ TA 为你精心调配了专属颜料：\n【${result.name}】\n\n已自动为你换上！`);
+        switchPixelTab('draw');
+    } catch(e) {
+        uiAlert("网络波动，或模型无法返回JSON，调色失败请重试。");
+    } finally {
+        if(btn) { btn.innerText = "生成专属颜料 (免费)"; btn.disabled = false; }
+    }
+};
+
+window.deleteAiPalette = async function(id) {
+    if(!confirm("确定要删除这套 TA 送你的颜料吗？")) return;
+    let customP = await getDB('pixel_custom_palettes', []);
+    customP = customP.filter(p => p.id !== id);
+    await setDB('pixel_custom_palettes', customP);
+    renderPixelShop();
+};
+// ==== 颜料商店系统结束 ====
+
+window.openPixelSaveMenu = function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:280px; padding:24px;">
+            <h3 style="text-align:center; margin-bottom:16px;">保存与导出</h3>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button class="form-btn" style="background:var(--color-yellow); box-shadow:3px 3px 0 var(--line-color);" onclick="document.querySelector('.modal-overlay:last-child').remove(); sharePixelToCyb();">分享画作给终端好友</button>
+                <button class="form-btn" style="background:var(--color-green);" onclick="document.querySelector('.modal-overlay:last-child').remove(); savePixelImage();">下载保存图片</button>
+                <button class="form-btn" style="background:var(--color-blue);" onclick="document.querySelector('.modal-overlay:last-child').remove(); setPixelAsAvatar();">设为聊天终端头像</button>
+                <button class="form-btn" style="background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+// --- 新增：分享像素画给终端联系人的核心功能 ---
+window.sharePixelToCyb = async function() {
+    let accounts = await getDB('cyb_accounts', []);
+    if(accounts.length === 0) return uiAlert("你还没有注册聊天终端账号哦！先去 [对话] 里注册一个。");
+    let accountId = await getDB('cyb_current_account_id', accounts[0].id);
+
+    let contactsDb = await getDB('cyb_contacts', {});
+    let myContacts = contactsDb[accountId] || [];
+    if(myContacts.length === 0) return uiAlert("终端通讯录里还没有联系人，先去加好友吧！");
+
+    // 1. 获取绘画数据统计
+    const totalCount = window.pixelGridSize * window.pixelGridSize;
+    let coloredCount = 0;
+    for (let i = 0; i < window.pixelGridData.length; i++) {
+        let color = window.pixelGridData[i];
+        if (color && color !== 'transparent' && color !== '#transparent') coloredCount++;
+    }
+    const createTime = new Date(window.pixelStats.createTime).toLocaleString();
+    const updateTime = new Date(window.pixelStats.updateTime).toLocaleString();
+    const strokeCount = window.pixelStats.strokeCount;
+
+        // 组装给 AI 看的系统级隐藏数据面板
+    const statsText = `【系统强制提示：用户向你分享了一幅刚刚画好的像素画作（图片就在下一条消息中）。画板创作始于：${createTime}，最后落笔：${updateTime}，累计修改了：${strokeCount} 笔，最终填色格子占比：${coloredCount} / ${totalCount}。】`;
+
+    // 2. 将画板转为 Base64 图片
+    const offCanvas = document.createElement('canvas');
+    const scale = 12; // 缩放比例，保证图片清晰度且数据不过大
+    offCanvas.width = window.pixelGridSize * scale;
+    offCanvas.height = window.pixelGridSize * scale;
+    const octx = offCanvas.getContext('2d');
+    
+    // 带上底色
+    if (window.pixelCanvasBg !== 'transparent') {
+        octx.fillStyle = window.pixelCanvasBg;
+        octx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+    }
+    for (let i = 0; i < window.pixelGridData.length; i++) {
+        let color = window.pixelGridData[i];
+        if (color && color !== 'transparent' && color !== '#transparent') {
+            let x = (i % window.pixelGridSize) * scale;
+            let y = Math.floor(i / window.pixelGridSize) * scale;
+            octx.fillStyle = color;
+            octx.fillRect(x, y, scale, scale);
+        }
+    }
+    const imgBase64 = offCanvas.toDataURL("image/png");
+
+    // 3. 呼出选人弹窗
+    let listHtml = myContacts.map(c => `
+        <div onclick="executeSharePixel('${accountId}', '${c.id}', '${statsText.replace(/\n/g, '\\n')}', '${imgBase64}')" style="padding:12px; border:2.5px solid var(--line-color); border-radius:12px; font-weight:900; cursor:pointer; background:var(--neo-bg); box-shadow:3px 3px 0 var(--line-color); margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; background:var(--color-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; border: 2px solid var(--line-color); ${c.avatarImg ? `background-image:url(${c.avatarImg}); background-size:cover; color:transparent;` : ''}">${c.avatarImg ? '' : (c.remark||c.name).charAt(0)}</div>
+            <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.remark || c.name}</span>
+            <div class="diary-mini-btn" style="background:var(--color-yellow); color:#111;">分享</div>
+        </div>
+    `).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'sharePixelModal';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '9999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:320px; padding:24px 20px; max-height:80vh; display:flex; flex-direction:column;">
+            <h3 style="text-align:center; margin-bottom:12px;">分享给谁看看？</h3>
+            <div style="font-size:12px; font-weight:bold; opacity:0.6; text-align:center; margin-bottom:16px;">TA会知道你这幅画画了多久、多少笔。</div>
+            <div style="flex:1; overflow-y:auto; padding-right:4px;">
+                ${listHtml}
+            </div>
+            <button class="form-btn" style="margin-top:16px; width:100%; background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.remove()">取消</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+// --- 静默写入数据库，绝不触发立刻回复 ---
+window.executeSharePixel = async function(accountId, targetId, statsText, imgBase64) {
+    document.getElementById('sharePixelModal').remove();
+    
+    let chatsDb = await getDB('cyb_chats', {});
+    if(!chatsDb[accountId]) chatsDb[accountId] = {};
+    if(!chatsDb[accountId][targetId]) chatsDb[accountId][targetId] = [];
+
+    const now = Date.now();
+
+    // 1. 发送画板数据文字包 (设置为 isHidden: true 彻底不在聊天框显示，只有发API时AI看得见)
+    chatsDb[accountId][targetId].push({
+        id: now + '_stat',
+        role: 'user',
+        content: statsText,
+        timestamp: now,
+        isHidden: true,
+        failed: false
+    });
+
+    // 2. 紧随其后发出实际画作图像 (修改外层提示名)
+    chatsDb[accountId][targetId].push({
+        id: now + '_img',
+        role: 'user',
+        content: '[分享了像素画]',
+        imageBase64: imgBase64,
+        timestamp: now + 1,
+        failed: false
+    });
+
+    await setDB('cyb_chats', chatsDb);
+    
+    // 瞬间退回上一层，没有阻断感
+    document.querySelector('.modal-overlay:last-child')?.remove();
+};
+
+
+
+// 渲染画板页面
+window.renderPixelDraw = async function() {
+    const container = document.getElementById('pixelAppContainer');
+    
+    let customPalettes = await getDB('pixel_custom_palettes', []);
+    let allPalettes = [...PIXEL_PALETTES, ...customPalettes];
+    let activePaletteId = await getDB('pixel_active_palette', 'p_default');
+    let activePalette = allPalettes.find(p => p.id === activePaletteId) || allPalettes[0];
+
+    let validColors = activePalette.colors.filter(c => c !== 'transparent' && c !== '#transparent');
+
+    let colorsHtml = validColors.map(color => {
+        let isSelected = window.pixelCurrentTool !== 'eraser' && window.pixelCurrentColor === color;
+        let border = isSelected ? 'border: 3px solid var(--color-pink); transform: translateY(-4px);' : 'border: 2.5px solid var(--line-color);';
+        return `<div onclick="setPixelColor('${color}')" style="width: 32px; height: 32px; border-radius: 50%; background: ${color}; ${border} box-shadow: 2px 2px 0 rgba(0,0,0,0.15); cursor: pointer; transition: 0.1s; flex-shrink:0;"></div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="padding: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-size: 15px; font-weight: 900; color: var(--text-main);">画布尺寸：${window.pixelGridSize} x ${window.pixelGridSize}</div>
+                <button class="diary-mini-btn" style="background:var(--neo-bg); box-shadow: 2px 2px 0 var(--line-color);" onclick="openPixelSizeModal()">修改尺寸</button>
+            </div>
+            
+            <div style="margin-bottom:16px;">
+                <div style="display:flex; gap:12px; overflow-x:auto; padding: 4px 0 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                    ${colorsHtml}
+                </div>
+            </div>
+
+            <!-- 第一排工具栏，加入统计信息按钮 -->
+            <div style="display:flex; justify-content:flex-start; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; position: relative;">
+                <div class="pixel-tool-btn ${window.pixelCurrentTool === 'pen' ? 'active' : ''}" onclick="setPixelTool('pen')">画笔</div>
+                <div class="pixel-tool-btn ${window.pixelCurrentTool === 'eraser' ? 'active' : ''}" onclick="setPixelTool('eraser')">橡皮</div>
+                <div class="pixel-tool-btn ${window.pixelCurrentTool === 'fill' ? 'active' : ''}" onclick="setPixelTool('fill')">油漆桶</div>
+                <div class="pixel-tool-btn ${window.pixelCurrentTool === 'dropper' ? 'active' : ''}" onclick="setPixelTool('dropper')">吸管</div>
+<div class="pixel-tool-btn ${window.pixelCurrentTool === 'select' ? 'active' : ''}" onclick="setPixelTool('select')">框选</div>
+                
+                <div class="pixel-tool-btn" id="btnPixelInfo" onclick="togglePixelInfo()" style="margin-left: auto; width: 34px; height: 34px; border-radius: 50%; padding: 0; background: var(--neo-bg); font-family: serif; font-size: 18px; font-weight: bold; font-style: italic;">i</div>
+                
+                <!-- 统计信息气泡窗 -->
+                <div id="pixelInfoPopup" style="display:none; position:absolute; top: 40px; right: 0; background: var(--bg-color); border: 2.5px solid var(--line-color); border-radius: 12px; padding: 12px; box-shadow: 4px 4px 0 var(--line-color); z-index: 100; min-width: 160px; font-size: 12px; font-weight: 900; line-height: 1.6; color: var(--text-main);">
+                    <div style="opacity:0.6; margin-bottom: 2px;">创建时间</div>
+                    <div style="margin-bottom: 8px;">${new Date(window.pixelStats.createTime).toLocaleString()}</div>
+                    <div style="opacity:0.6; margin-bottom: 2px;">最后落笔</div>
+                    <div style="margin-bottom: 8px;" id="infoUpdateTime">${new Date(window.pixelStats.updateTime).toLocaleString()}</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="opacity:0.6;">累计笔画</span><span style="color:var(--color-blue);">${window.pixelStats.strokeCount} 笔</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="opacity:0.6;">填色占比</span><span style="color:var(--color-pink);" id="infoColorCount">计算中...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二排工具栏 -->
+            <div style="display:flex; justify-content:flex-start; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                <div class="pixel-tool-btn" onclick="undoPixelCanvas()" style="background:var(--neo-bg);">撤销</div>
+                <div class="pixel-tool-btn" onclick="redoPixelCanvas()" style="background:var(--neo-bg);">重做</div>
+                <div class="pixel-tool-btn" onclick="openPixelCanvasSettings()" style="background:var(--color-blue);">画布</div>
+                <div class="pixel-tool-btn" onclick="clearPixelCanvas()" style="margin-left: auto; background:var(--color-pink);">清空</div>
+            </div>
+
+            <!-- Canvas 画板 -->
+            <div style="display:flex; justify-content:center; align-items:center; position:relative; background: #e0e0e0; padding:10px; border-radius:16px; border: 2.5px solid var(--line-color); margin-bottom: 24px; touch-action:none;">
+                <canvas id="pixelCanvas" style="background: transparent; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); width: 100%; max-width: 340px; aspect-ratio: 1/1; image-rendering: pixelated;"></canvas>
+            </div>
+
+            <button class="form-btn" style="width:100%; background:var(--color-green); font-size:15px; padding:12px;" onclick="openPixelSaveMenu()">保存与导出</button>
+        </div>
+    `;
+
+    const canvas = document.getElementById('pixelCanvas');
+    const ctx = canvas.getContext('2d');
+    const cellSize = Math.max(4, Math.floor(320 / window.pixelGridSize));
+    canvas.width = window.pixelGridSize * cellSize;
+    canvas.height = window.pixelGridSize * cellSize;
+
+    let isDrawing = false;
+    let hasChangedInStroke = false; 
+
+    // 全局重绘
+const drawGrid = () => {
+    if (window.pixelCanvasBg === 'transparent') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e0e0e0';
+        for(let i=0; i<window.pixelGridSize; i++) for(let j=0; j<window.pixelGridSize; j++) if((i+j)%2===0) ctx.fillRect(j*cellSize, i*cellSize, cellSize, cellSize);
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<window.pixelGridSize; i++) for(let j=0; j<window.pixelGridSize; j++) if((i+j)%2!==0) ctx.fillRect(j*cellSize, i*cellSize, cellSize, cellSize);
+    } else {
+        ctx.fillStyle = window.pixelCanvasBg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    for (let i = 0; i < window.pixelGridData.length; i++) {
+        let color = window.pixelGridData[i];
+        if (color && color !== 'transparent' && color !== '#transparent') {
+            let x = (i % window.pixelGridSize) * cellSize;
+            let y = Math.floor(i / window.pixelGridSize) * cellSize;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, cellSize, cellSize);
+        }
+    }
+    
+    if (window.pixelShowGrid) {
+        let lineAlpha = window.pixelGridSize <= 32 ? 0.2 : (window.pixelGridSize <= 64 ? 0.1 : 0.05);
+        let isDarkBg = window.pixelCanvasBg === '#000000' || window.pixelCanvasBg === '#111111';
+        ctx.strokeStyle = isDarkBg ? `rgba(255,255,255,${lineAlpha})` : `rgba(0,0,0,${lineAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i=1; i<window.pixelGridSize; i++){
+            ctx.moveTo(i*cellSize + 0.5, 0); ctx.lineTo(i*cellSize + 0.5, canvas.height);
+            ctx.moveTo(0, i*cellSize + 0.5); ctx.lineTo(canvas.width, i*cellSize + 0.5);
+        }
+        ctx.stroke();
+    }
+
+    // 绘制选区悬浮像素
+    if (window.pixelSelection && window.pixelSelection.pixels) {
+        window.pixelSelection.pixels.forEach(p => {
+            if (p.color !== 'transparent' && p.color !== '#transparent') {
+                let rx = p.c + window.pixelSelection.offsetC;
+                let ry = p.r + window.pixelSelection.offsetR;
+                if (rx >= 0 && rx < window.pixelGridSize && ry >= 0 && ry < window.pixelGridSize) {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(rx * cellSize, ry * cellSize, cellSize, cellSize);
+                }
+            }
+        });
+    }
+    
+    // 绘制虚线框选区
+    if (window.pixelSelection) {
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        let bx, by, bw, bh;
+        if (window.pixelSelection.phase === 'selecting') {
+            let minC = Math.min(window.pixelSelection.startC, window.pixelSelection.curC);
+            let maxC = Math.max(window.pixelSelection.startC, window.pixelSelection.curC);
+            let minR = Math.min(window.pixelSelection.startR, window.pixelSelection.curR);
+            let maxR = Math.max(window.pixelSelection.startR, window.pixelSelection.curR);
+            bx = minC * cellSize; by = minR * cellSize;
+            bw = (maxC - minC + 1) * cellSize; bh = (maxR - minR + 1) * cellSize;
+        } else if (window.pixelSelection.phase === 'selected') {
+            bx = (window.pixelSelection.minC + window.pixelSelection.offsetC) * cellSize;
+            by = (window.pixelSelection.minR + window.pixelSelection.offsetR) * cellSize;
+            bw = window.pixelSelection.w * cellSize; bh = window.pixelSelection.h * cellSize;
+        }
+        ctx.strokeRect(bx, by, bw, bh);
+        ctx.setLineDash([]); 
+    }
+};
+
+const floodFill = (col, row, targetColor, replacementColor) => {
+    if (targetColor === replacementColor) return;
+    const size = window.pixelGridSize;
+    const stack = [[col, row]];
+    while(stack.length > 0) {
+        const [x, y] = stack.pop();
+        const idx = y * size + x;
+        if (x < 0 || x >= size || y < 0 || y >= size) continue;
+        if (window.pixelGridData[idx] !== targetColor) continue;
+        window.pixelGridData[idx] = replacementColor;
+        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+};
+
+window.mergePixelSelection = () => {
+    if (window.pixelSelection && window.pixelSelection.phase === 'selected') {
+        let changed = false;
+        window.pixelSelection.pixels.forEach(p => {
+            let rx = p.c + window.pixelSelection.offsetC;
+            let ry = p.r + window.pixelSelection.offsetR;
+            if (rx >= 0 && rx < window.pixelGridSize && ry >= 0 && ry < window.pixelGridSize) {
+                if (p.color !== 'transparent' && p.color !== '#transparent') {
+                    let idx = ry * window.pixelGridSize + rx;
+                    window.pixelGridData[idx] = p.color;
+                    changed = true;
+                }
+            }
+        });
+        window.pixelSelection = null;
+        if (changed) { hasChangedInStroke = true; savePixelHistory(); }
+        drawGrid();
+    }
+};
+
+const getPointerCoords = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    return { 
+        col: Math.floor((x * canvas.width / rect.width) / cellSize), 
+        row: Math.floor((y * canvas.height / rect.height) / cellSize) 
+    };
+};
+
+const applyTool = (col, row, isTapDown) => {
+    if(col >= 0 && col < window.pixelGridSize && row >= 0 && row < window.pixelGridSize) {
+        const idx = row * window.pixelGridSize + col;
+        if (window.pixelCurrentTool === 'dropper') {
+            if(isTapDown) {
+                let picked = window.pixelGridData[idx];
+                if (picked && picked !== 'transparent') window.pixelCurrentColor = picked;
+                window.pixelCurrentTool = 'pen'; renderPixelDraw();
+            }
+        } else if (window.pixelCurrentTool === 'fill') {
+            if(isTapDown) {
+                let targetColor = window.pixelGridData[idx] || 'transparent';
+                floodFill(col, row, targetColor, window.pixelCurrentColor);
+                drawGrid(); hasChangedInStroke = true;
+            }
+        } else {
+            const colorToSet = window.pixelCurrentTool === 'eraser' ? 'transparent' : window.pixelCurrentColor;
+            if(window.pixelGridData[idx] !== colorToSet) {
+                window.pixelGridData[idx] = colorToSet;
+                drawGrid(); hasChangedInStroke = true;
+            }
+        }
+    }
+};
+
+canvas.ontouchstart = (e) => {
+    const { col, row } = getPointerCoords(e);
+    if (window.pixelCurrentTool === 'select') {
+        if (window.pixelSelection && window.pixelSelection.phase === 'selected') {
+            let curBoxC = window.pixelSelection.minC + window.pixelSelection.offsetC;
+            let curBoxR = window.pixelSelection.minR + window.pixelSelection.offsetR;
+            if (col >= curBoxC && col < curBoxC + window.pixelSelection.w && row >= curBoxR && row < curBoxR + window.pixelSelection.h) {
+                window.pixelSelection.isDragging = true;
+                window.pixelSelection.dragStartC = col;
+                window.pixelSelection.dragStartR = row;
+                window.pixelSelection.baseOffsetC = window.pixelSelection.offsetC;
+                window.pixelSelection.baseOffsetR = window.pixelSelection.offsetR;
+            } else {
+                window.mergePixelSelection();
+                window.pixelSelection = { phase: 'selecting', startC: col, startR: row, curC: col, curR: row };
+            }
+        } else {
+            window.pixelSelection = { phase: 'selecting', startC: col, startR: row, curC: col, curR: row };
+        }
+        drawGrid();
+    } else {
+        if (window.pixelSelection) window.mergePixelSelection();
+        isDrawing = true; hasChangedInStroke = false; applyTool(col, row, true);
+    }
+    e.preventDefault();
+};
+
+canvas.ontouchmove = (e) => {
+    const { col, row } = getPointerCoords(e);
+    if (window.pixelCurrentTool === 'select' && window.pixelSelection) {
+        if (window.pixelSelection.phase === 'selecting') {
+            window.pixelSelection.curC = col; window.pixelSelection.curR = row;
+            drawGrid();
+        } else if (window.pixelSelection.phase === 'selected' && window.pixelSelection.isDragging) {
+            window.pixelSelection.offsetC = window.pixelSelection.baseOffsetC + (col - window.pixelSelection.dragStartC);
+            window.pixelSelection.offsetR = window.pixelSelection.baseOffsetR + (row - window.pixelSelection.dragStartR);
+            drawGrid();
+        }
+    } else if (isDrawing) { applyTool(col, row, false); }
+    e.preventDefault();
+};
+
+canvas.ontouchend = (e) => {
+    if (window.pixelCurrentTool === 'select' && window.pixelSelection) {
+        if (window.pixelSelection.phase === 'selecting') {
+            let minC = Math.max(0, Math.min(window.pixelSelection.startC, window.pixelSelection.curC));
+            let maxC = Math.min(window.pixelGridSize - 1, Math.max(window.pixelSelection.startC, window.pixelSelection.curC));
+            let minR = Math.max(0, Math.min(window.pixelSelection.startR, window.pixelSelection.curR));
+            let maxR = Math.min(window.pixelGridSize - 1, Math.max(window.pixelSelection.startR, window.pixelSelection.curR));
+            
+            let pixels = [];
+            for(let r = minR; r <= maxR; r++){
+                for(let c = minC; c <= maxC; c++){
+                    let idx = r * window.pixelGridSize + c;
+                    let color = window.pixelGridData[idx];
+                    pixels.push({ c, r, color });
+                    window.pixelGridData[idx] = 'transparent'; 
+                }
+            }
+            window.pixelSelection = { phase: 'selected', minC, minR, w: maxC - minC + 1, h: maxR - minR + 1, pixels, offsetC: 0, offsetR: 0, isDragging: false };
+            drawGrid();
+        } else if (window.pixelSelection.phase === 'selected') {
+            window.pixelSelection.isDragging = false;
+        }
+    } else {
+        isDrawing = false; if(hasChangedInStroke) savePixelHistory();
+    }
+};
+
+    canvas.onmousedown = canvas.ontouchstart;
+    canvas.onmousemove = canvas.ontouchmove;
+    window.onmouseup = canvas.ontouchend;
+    
+    drawGrid(); // <--- 加上这一句，打开页面就会立刻渲染白底和网格线！
+};
+
+window.undoPixelCanvas = function() {
+    if (window.pixelHistoryStep > 0) {
+        window.pixelHistoryStep--;
+        window.pixelGridData = [...window.pixelHistory[window.pixelHistoryStep]];
+        renderPixelDraw();
+    }
+};
+
+window.redoPixelCanvas = function() {
+    if (window.pixelHistoryStep < window.pixelHistory.length - 1) {
+        window.pixelHistoryStep++;
+        window.pixelGridData = [...window.pixelHistory[window.pixelHistoryStep]];
+        renderPixelDraw();
+    }
+};
+
+// 【修复清空无反应】改用了漂亮的 UI 确认框
+window.clearPixelCanvas = async function() {
+    if(!(await uiConfirm("确定要刮白整个画布吗？\n(操作后可以点击【撤销】恢复)"))) return;
+    window.pixelGridData = new Array(window.pixelGridSize * window.pixelGridSize).fill('transparent');
+    await setDB('pixel_canvas_data', window.pixelGridData);
+    savePixelHistory(); // 清空操作算作一步，可随时撤销
+    renderPixelDraw();
+};
+
+// 【新增】打开画布设置面板
+window.openPixelCanvasSettings = function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:280px; padding:24px;">
+            <h3 style="text-align:center; margin-bottom:16px;">画布与视图设置</h3>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px dashed rgba(0,0,0,0.1);">
+                <span style="font-size:14px; font-weight:900;">显示辅助网格线</span>
+                <label class="switch" style="transform:scale(0.8); margin:0;">
+                    <input type="checkbox" onchange="window.pixelShowGrid=this.checked; renderPixelDraw();" ${window.pixelShowGrid ? 'checked' : ''}>
+                    <span class="slider-btn"></span>
+                </label>
+            </div>
+
+            <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px dashed rgba(0,0,0,0.1);">
+                <div style="font-size:14px; font-weight:900; margin-bottom:12px;">图像翻转操作</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="diary-mini-btn" style="flex:1; background:var(--neo-bg);" onclick="flipPixelCanvas('horizontal')">↔ 水平翻转</button>
+                    <button class="diary-mini-btn" style="flex:1; background:var(--neo-bg);" onclick="flipPixelCanvas('vertical')">↕ 垂直翻转</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <div style="font-size:14px; font-weight:900; margin-bottom:12px;">画布默认底色</div>
+                <div style="display:flex; gap:10px;">
+                    <div onclick="setPixelBg('#ffffff')" style="flex:1; height:32px; background:#ffffff; border:2.5px solid ${window.pixelCanvasBg==='#ffffff'?'var(--color-pink)':'var(--line-color)'}; border-radius:8px; cursor:pointer;"></div>
+                    <div onclick="setPixelBg('#111111')" style="flex:1; height:32px; background:#111111; border:2.5px solid ${window.pixelCanvasBg==='#111111'?'var(--color-pink)':'var(--line-color)'}; border-radius:8px; cursor:pointer;"></div>
+                    <div onclick="setPixelBg('transparent')" style="flex:1; height:32px; background:repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 50% / 8px 8px; border:2.5px solid ${window.pixelCanvasBg==='transparent'?'var(--color-pink)':'var(--line-color)'}; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#111;">透明背景</div>
+                </div>
+            </div>
+
+            <button class="form-btn" style="width:100%; background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.remove()">关闭面板</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+window.setPixelBg = function(color) {
+    window.pixelCanvasBg = color;
+    document.querySelector('.modal-overlay:last-child').remove();
+    openPixelCanvasSettings(); // 刷新弹窗，显示被选中的粉色边框
+    renderPixelDraw();
+};
+
+window.flipPixelCanvas = function(direction) {
+    let newData = new Array(window.pixelGridSize * window.pixelGridSize).fill('transparent');
+    let size = window.pixelGridSize;
+    for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+            let oldIdx = r * size + c;
+            let newIdx;
+            if (direction === 'horizontal') {
+                newIdx = r * size + (size - 1 - c);
+            } else {
+                newIdx = (size - 1 - r) * size + c;
+            }
+            newData[newIdx] = window.pixelGridData[oldIdx];
+        }
+    }
+    window.pixelGridData = newData;
+    savePixelHistory(); // 翻转算一步操作，支持撤销
+    renderPixelDraw();
+};
+
+window.savePixelImage = function() {
+    const offCanvas = document.createElement('canvas');
+    const scale = 16; 
+    offCanvas.width = window.pixelGridSize * scale;
+    offCanvas.height = window.pixelGridSize * scale;
+    const octx = offCanvas.getContext('2d');
+    
+    // 如果设置的不是透明背景，导出时就铺上一层实色底
+    if (window.pixelCanvasBg !== 'transparent') {
+        octx.fillStyle = window.pixelCanvasBg;
+        octx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+    }
+    
+    for (let i = 0; i < window.pixelGridData.length; i++) {
+        let color = window.pixelGridData[i];
+        if (color && color !== 'transparent' && color !== '#transparent') {
+            let x = (i % window.pixelGridSize) * scale;
+            let y = Math.floor(i / window.pixelGridSize) * scale;
+            octx.fillStyle = color;
+            octx.fillRect(x, y, scale, scale);
+        }
+    }
+    
+    const dataUrl = offCanvas.toDataURL("image/png");
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = '像素画作_' + Date.now() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    uiAlert("画作已下载保存！\n(若是透明背景，在某些手机相册可能看起来是黑色，属于正常现象)");
+};
+
+window.setPixelAsAvatar = async function() {
+    if(!confirm("确定要把这张像素画设为当前终端账号的头像吗？")) return;
+    
+    const offCanvas = document.createElement('canvas');
+    const scale = 10;
+    offCanvas.width = window.pixelGridSize * scale;
+    offCanvas.height = window.pixelGridSize * scale;
+    const octx = offCanvas.getContext('2d');
+    octx.fillStyle = '#ffffff';
+    octx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+    
+    for (let i = 0; i < window.pixelGridData.length; i++) {
+        let color = window.pixelGridData[i];
+        if (color && color !== 'transparent' && color !== '#transparent') {
+            let x = (i % window.pixelGridSize) * scale;
+            let y = Math.floor(i / window.pixelGridSize) * scale;
+            octx.fillStyle = color;
+            octx.fillRect(x, y, scale, scale);
+        }
+    }
+    
+    const dataUrl = offCanvas.toDataURL("image/png");
+
+    let accountId = await getDB('cyb_current_account_id');
+    let accounts = await getDB('cyb_accounts', []);
+    let idx = accounts.findIndex(a => a.id === accountId);
+    if(idx > -1) {
+        accounts[idx].avatarB64 = dataUrl;
+        await setDB('cyb_accounts', accounts);
+        uiAlert("设置成功！快去聊天列表看看你的新头像吧。");
+    } else {
+        uiAlert("没有找到终端账号，请先去【对话】功能里注册一个。");
+    }
+};
+
+window.openPixelSizeModal = function() {
+    const sizes = [16, 24, 32, 48, 64, 96, 128, 192];
+    let gridHtml = sizes.map(s => {
+        let isSelected = window.pixelGridSize === s;
+        // 画一个小方块当示意图，尺寸大的方块看起来稍微大一点
+        let boxSize = Math.max(12, Math.min(30, s/3));
+        return `
+        <div onclick="changePixelSize(${s})" style="background:var(--neo-bg); border: 2.5px solid ${isSelected ? 'var(--color-pink)' : 'var(--line-color)'}; border-radius:12px; padding:16px 0; display:flex; flex-direction:column; align-items:center; cursor:pointer; box-shadow: ${isSelected ? '2px 2px 0 var(--color-pink)' : '3px 3px 0 var(--line-color)'};">
+            <div style="width:${boxSize}px; height:${boxSize}px; border:2.5px solid var(--line-color); margin-bottom:10px; ${isSelected ? 'background:var(--color-pink);' : ''}"></div>
+            <div style="font-size:13px; font-weight:900;">${s} x ${s}</div>
+        </div>
+    `}).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:340px; padding:24px;">
+            <h3 style="text-align:center; margin-bottom:12px;">选择画幅大小</h3>
+            <label style="display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:16px; font-size:13px; font-weight:900; color:var(--color-blue); cursor:pointer;">
+                <input type="checkbox" id="keepPixelImageCb" checked style="accent-color:var(--color-blue); transform:scale(1.2);"> 
+                保留原画内容并居中扩展
+            </label>
+            <div style="font-size:12px; font-weight:bold; color:#e74c3c; margin-bottom:16px; text-align:center;">注意：若取消上面勾选，更改尺寸会清空画作！</div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px; max-height:45vh; overflow-y:auto; padding:4px;">
+                ${gridHtml}
+            </div>
+            <button class="form-btn" style="width:100%; background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.remove()">取消</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+// 切换信息气泡
+window.togglePixelInfo = function() {
+    const popup = document.getElementById('pixelInfoPopup');
+    if (!popup) return;
+    
+    if (popup.style.display === 'none') {
+        // 动态计算填色的格子占比
+        const totalCount = window.pixelGridSize * window.pixelGridSize;
+        let coloredCount = 0;
+        for (let i = 0; i < window.pixelGridData.length; i++) {
+            let color = window.pixelGridData[i];
+            if (color && color !== 'transparent' && color !== '#transparent') {
+                coloredCount++;
+            }
+        }
+        document.getElementById('infoColorCount').innerText = `${coloredCount} / ${totalCount}`;
+        document.getElementById('infoUpdateTime').innerText = new Date(window.pixelStats.updateTime).toLocaleString();
+        popup.style.display = 'block';
+    } else {
+        popup.style.display = 'none';
+    }
+};
+
+window.clearPixelCanvas = async function() {
+    if(!(await uiConfirm("确定要刮白整个画布吗？\n(操作后可以点击【撤销】恢复)"))) return;
+    window.pixelGridData = new Array(window.pixelGridSize * window.pixelGridSize).fill('transparent');
+    await setDB('pixel_canvas_data', window.pixelGridData);
+    
+    // 【新增】清空画板顺便把笔画清零
+    window.pixelStats.strokeCount = 0;
+    window.pixelStats.updateTime = Date.now();
+    await setDB('pixel_canvas_stats', window.pixelStats);
+
+    savePixelHistory(); 
+    renderPixelDraw();
+};
+
+window.changePixelSize = async function(size) {
+    const keepImage = document.getElementById('keepPixelImageCb') ? document.getElementById('keepPixelImageCb').checked : false;
+    
+    if (!keepImage) {
+        if(!(await uiConfirm("确认要把画布重置为 " + size + "x" + size + " 吗？\n警告：当前画作将会被清空！"))) return;
+    }
+
+    document.querySelector('.modal-overlay:last-child').remove();
+    
+    let newData = new Array(size * size).fill('transparent');
+    
+    if (keepImage) {
+        // 保留原画并居中放置
+        const oldSize = window.pixelGridSize;
+        const oldData = window.pixelGridData;
+        const offset = Math.max(0, Math.floor((size - oldSize) / 2));
+        
+        for (let r = 0; r < oldSize; r++) {
+            for (let c = 0; c < oldSize; c++) {
+                if (r + offset < size && c + offset < size) {
+                    newData[(r + offset) * size + (c + offset)] = oldData[r * oldSize + c];
+                }
+            }
+        }
+    } else {
+        // 清空重置笔画数
+        window.pixelStats = { createTime: Date.now(), updateTime: Date.now(), strokeCount: 0 };
+        await setDB('pixel_canvas_stats', window.pixelStats);
+    }
+    
+    window.pixelGridSize = size;
+    window.pixelGridData = newData;
+    
+    await setDB('pixel_grid_size', size);
+    await setDB('pixel_canvas_data', window.pixelGridData);
+    
+    // 清空历史记录防串台
+    window.pixelHistory = [];
+    window.pixelHistoryStep = -1;
+    savePixelHistory(); 
+    
+    renderPixelDraw(); 
+};
+
+// ==========================================
+// 新增：日记与记账的独立副API设置面板
+// ==========================================
+window.openDiarySettingsModal = async function() {
+    let useSubApi = await getDB('diary_use_subapi', true);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'diarySettingsModal';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 320px; padding: 24px;">
+            <h3 style="text-align:center; margin-bottom: 16px;">日记设置</h3>
+            <div class="switch-wrap" style="box-shadow:none; border:2px dashed var(--line-color); padding:12px; margin-bottom:16px; border-radius:12px; background:var(--neo-bg);">
+                <div>
+                    <div style="font-size: 14px; font-weight: 900;">使用副 API (省流)</div>
+                    <div style="font-size: 11px; font-weight: bold; opacity: 0.5;">开启后AI写日记/看日记将调用副模型</div>
+                </div>
+                <label class="switch" style="transform:scale(0.8); margin:0;">
+                    <input type="checkbox" id="diary_set_subapi" ${useSubApi ? 'checked' : ''}>
+                    <span class="slider-btn"></span>
+                </label>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="form-btn" style="flex:1; background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>
+                <button class="form-btn" style="flex:1; background:var(--color-green);" onclick="saveDiarySettings()">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+window.saveDiarySettings = async function() {
+    await setDB('diary_use_subapi', document.getElementById('diary_set_subapi').checked);
+    document.getElementById('diarySettingsModal').remove();
+    uiAlert("日记设置已保存！");
+};
+
+window.openLedgerSettingsModal = async function() {
+    let useSubApi = await getDB('ledger_use_subapi', true);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'ledgerSettingsModal';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '999999';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 320px; padding: 24px;">
+            <h3 style="text-align:center; margin-bottom: 16px;">记账设置</h3>
+            <div class="switch-wrap" style="box-shadow:none; border:2px dashed var(--line-color); padding:12px; margin-bottom:16px; border-radius:12px; background:var(--neo-bg);">
+                <div>
+                    <div style="font-size: 14px; font-weight: 900;">使用副 API (省流)</div>
+                    <div style="font-size: 11px; font-weight: bold; opacity: 0.5;">开启后AI偷偷记账将调用副模型</div>
+                </div>
+                <label class="switch" style="transform:scale(0.8); margin:0;">
+                    <input type="checkbox" id="ledger_set_subapi" ${useSubApi ? 'checked' : ''}>
+                    <span class="slider-btn"></span>
+                </label>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="form-btn" style="flex:1; background:#5a5f66; color:#fff;" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>
+                <button class="form-btn" style="flex:1; background:var(--color-green);" onclick="saveLedgerSettings()">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+};
+
+window.saveLedgerSettings = async function() {
+    await setDB('ledger_use_subapi', document.getElementById('ledger_set_subapi').checked);
+    document.getElementById('ledgerSettingsModal').remove();
+    uiAlert("记账设置已保存！");
+};
+
 </script>
 
 </body>
